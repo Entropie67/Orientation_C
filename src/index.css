@@ -1,0 +1,15 @@
+@import "tailwindcss";
+
+@layer base {
+  html {
+    font-family: system-ui, -apple-system, 'Segoe UI', sans-serif;
+    -webkit-font-smoothing: antialiased;
+  }
+  body {
+    margin: 0;
+    background-color: #f0f4f8;
+    color: #1e293b;
+  }
+  * { box-sizing: border-box; }
+  #root { min-height: 100svh; }
+}
