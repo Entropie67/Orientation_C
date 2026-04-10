@@ -32,7 +32,7 @@ function recommendForPremiere(profile: StudentProfile): RecommendationResult {
 
   const scores: Partial<Record<SpecialtyId, number>> = {
     maths: score(grades.maths) * 2,
-    'physique-chimie': score(grades.physics) * 1.5,
+    'pc': score(grades.physics) * 1.5,
     svt: score(grades.svt) * 1.2,
     ses: 2, hggsp: 2,
     hlp: score(grades.french) * 1.2,
@@ -42,16 +42,20 @@ function recommendForPremiere(profile: StudentProfile): RecommendationResult {
   };
 
   if (goal === 'sciences') {
-    scores['maths'] = (scores['maths'] ?? 0) + 4;
-    scores['physique-chimie'] = (scores['physique-chimie'] ?? 0) + 3;
-    scores['nsi'] = (scores['nsi'] ?? 0) + 3;
-    scores['svt'] = (scores['svt'] ?? 0) + 1;
+    // Première Sciences/Ingénierie : Maths + Physique + NSI (recommandé pour MP2i, MPSI, PCSI)
+    // Alternative : Maths + Physique + autre spé scientifique selon envie
+    scores['maths'] = (scores['maths'] ?? 0) + 8;
+    scores['pc'] = (scores['pc'] ?? 0) + 7;
+    scores['nsi'] = (scores['nsi'] ?? 0) + 6;
+    scores['svt'] = (scores['svt'] ?? 0) + 2;
+    scores['si'] = (scores['si'] ?? 0) + 1; // SI uniquement si orientation PTSI spécifiquement
   }
   if (goal === 'health') {
-    scores['maths'] = (scores['maths'] ?? 0) + 3;
-    scores['physique-chimie'] = (scores['physique-chimie'] ?? 0) + 4;
-    scores['svt'] = (scores['svt'] ?? 0) + 4;
-    scores['nsi'] = (scores['nsi'] ?? 0) + 1;
+    // Première Santé : Maths + Physique + SVT (principal) ou Maths + Physique + NSI (alternative)
+    scores['maths'] = (scores['maths'] ?? 0) + 8;
+    scores['pc'] = (scores['pc'] ?? 0) + 7;
+    scores['svt'] = (scores['svt'] ?? 0) + 6;
+    scores['nsi'] = (scores['nsi'] ?? 0) + 2;
   }
   if (goal === 'humanities') {
     scores['ses'] = (scores['ses'] ?? 0) + 4;
@@ -120,8 +124,15 @@ function recommendForTerminale(profile: StudentProfile): RecommendationResult {
   currentSpecialties.forEach((sid, i) => { specGrades[sid] = score(gradeMap[i]); });
 
   const goalBoost: Partial<Record<SpecialtyId, number>> = {};
-  if (goal === 'sciences') { goalBoost['maths'] = 5; goalBoost['physique-chimie'] = 4; goalBoost['nsi'] = 4; goalBoost['svt'] = 3; goalBoost['si'] = 3; }
-  if (goal === 'health') { goalBoost['physique-chimie'] = 5; goalBoost['svt'] = 5; goalBoost['maths'] = 3; goalBoost['nsi'] = 1; }
+  if (goal === 'sciences') {
+    // Terminale Prépa : Maths + NSI (MP2i, MPSI) ou Maths + Physique (MPSI, PCSI, PTSI)
+    goalBoost['maths'] = 8;
+    goalBoost['nsi'] = 5;
+    goalBoost['pc'] = 5;
+    goalBoost['svt'] = 2;
+    goalBoost['si'] = 2;
+  }
+  if (goal === 'health') { goalBoost['pc'] = 5; goalBoost['svt'] = 5; goalBoost['maths'] = 3; goalBoost['nsi'] = 1; }
   if (goal === 'humanities') { goalBoost['ses'] = 5; goalBoost['hggsp'] = 5; goalBoost['nsi'] = 3; goalBoost['hlp'] = 3; goalBoost['maths'] = 2; }
   if (goal === 'letters') { goalBoost['hlp'] = 6; goalBoost['hggsp'] = 4; goalBoost['ses'] = 3; }
   if (goal === 'arts') { goalBoost['cav'] = 6; goalBoost['nsi'] = 4; goalBoost['hlp'] = 3; goalBoost['hggsp'] = 2; }
@@ -138,7 +149,7 @@ function recommendForTerminale(profile: StudentProfile): RecommendationResult {
 
   return {
     primary,
-    rationale: buildTerminaleRationale(primary, dropped),
+    rationale: buildTerminaleRationale(primary, dropped, goal),
     vigilance: !isCoherent
       ? `Le duo ${primary.map(labelOf).join(' + ')} peut sembler inattendu pour ton projet, mais il reste viable.`
       : buildTerminaleVigilance(primary, dropped, profile),
@@ -160,9 +171,19 @@ function buildPremiereRationale(primary: SpecialtyId[], profile: StudentProfile,
   };
   const specs = primary.map(labelOf).join(', ');
   let base = `Ce trio — ${specs} — a été sélectionné en cohérence avec ${goalLabels[profile.goal] ?? 'ton profil'}.`;
-  if (primary.includes('nsi') && includeNSI)
+  if (profile.goal === 'sciences' && primary.includes('maths') && primary.includes('pc') && primary.includes('nsi'))
+    base += ' Maths + Physique + NSI est le trio recommandé pour les prépas MP2i, MPSI et PCSI. Il offre le maximum de flexibilité en Terminale.';
+  else if (profile.goal === 'sciences' && primary.includes('maths') && primary.includes('pc'))
+    base += ' Maths + Physique-Chimie forme le socle incontournable pour les filières scientifiques et prépas.';
+  if (profile.goal === 'sciences' && !primary.includes('si'))
+    base += ' Note : si tu vises spécifiquement la prépa PTSI, tu peux envisager SI en 3e spécialité à la place.';
+  if (profile.goal === 'health' && primary.includes('maths') && primary.includes('pc') && primary.includes('svt'))
+    base += ' Ce trio est le plus adapté pour PASS, LAS et les filières santé.';
+  else if (profile.goal === 'health' && primary.includes('nsi'))
+    base += ' NSI en 3e spécialité est une alternative viable qui ouvre aussi vers la bio-informatique et la recherche.';
+  if (primary.includes('nsi') && includeNSI && profile.goal !== 'sciences' && profile.goal !== 'health')
     base += " NSI a été incluse pour sa puissance transversale : elle renforce n'importe quel profil académique.";
-  if (primary.includes('maths') && primary.includes('physique-chimie'))
+  if (primary.includes('maths') && primary.includes('pc') && profile.goal !== 'sciences' && profile.goal !== 'health')
     base += ' La combinaison Maths + Physique-Chimie est l\'une des plus solides pour les filières scientifiques.';
   if (primary.includes('ses') && primary.includes('hggsp'))
     base += ' Le duo SES + HGGSP offre une base analytique très prisée en Sciences Po et en droit.';
@@ -171,33 +192,41 @@ function buildPremiereRationale(primary: SpecialtyId[], profile: StudentProfile,
   return base;
 }
 
-function buildTerminaleRationale(primary: SpecialtyId[], dropped: SpecialtyId): string {
+function buildTerminaleRationale(primary: SpecialtyId[], dropped: SpecialtyId, goal?: GoalId): string {
   let base = `Conserver ${primary.map(labelOf).join(' + ')} est le choix le plus stratégique pour ton profil.`;
   base += ` En abandonnant ${labelOf(dropped)}, tu concentres ton énergie sur les deux spécialités les plus alignées avec tes objectifs.`;
-  if (primary.includes('nsi')) base += ' NSI dans ton duo est un signal fort apprécié des formations sélectives.';
+  if (goal === 'sciences') {
+    if (primary.includes('maths') && primary.includes('nsi'))
+      base += ' Ce duo ouvre les prépas MP2i et MPSI — les plus recherchées en ingénierie et informatique.';
+    else if (primary.includes('maths') && primary.includes('pc'))
+      base += ' Ce duo ouvre les prépas MPSI, PCSI et PTSI — filières classiques d\'ingénierie.';
+  }
+  if (primary.includes('nsi') && goal !== 'sciences') base += ' NSI dans ton duo est un signal fort apprécié des formations sélectives.';
   return base;
 }
 
 function buildVigilance(primary: SpecialtyId[], profile: StudentProfile): string | undefined {
-  if (profile.goal === 'health' && !primary.includes('svt') && !primary.includes('physique-chimie'))
+  if (profile.goal === 'health' && !primary.includes('svt') && !primary.includes('pc'))
     return 'Pour un projet santé, vérifier que ton parcours inclut SVT ou Physique-Chimie — souvent requis pour PASS ou LAS.';
   if (profile.goal === 'sciences' && isWeak(profile.grades.maths) && primary.includes('maths'))
     return 'Maths figure dans ta recommandation malgré un niveau fragile. Un soutien est recommandé dès la rentrée.';
   return undefined;
 }
 
-function buildTerminaleVigilance(_primary: SpecialtyId[], dropped: SpecialtyId, profile: StudentProfile): string | undefined {
+function buildTerminaleVigilance(primary: SpecialtyId[], dropped: SpecialtyId, profile: StudentProfile): string | undefined {
   if (profile.goal === 'health' && dropped === 'svt')
     return 'Attention : SVT est souvent essentielle pour PASS, LAS, biologie. Vérifie les attendus de tes formations cibles.';
   if (profile.goal === 'sciences' && dropped === 'maths')
-    return "Abandonner les Maths en Terminale ferme certaines portes en prépa ou école d'ingénieurs.";
+    return "Abandonner les Maths en Terminale ferme certaines portes en prépa ou école d'ingénieurs. Pour les prépas, seuls Maths+NSI ou Maths+Physique sont recommandés.";
+  if (profile.goal === 'sciences' && primary.includes('maths') && !primary.includes('nsi') && !primary.includes('pc'))
+    return "Pour les prépas scientifiques, les deux seuls duos recommandés sont Maths+NSI (MP2i, MPSI) ou Maths+Physique (MPSI, PCSI, PTSI).";
   return undefined;
 }
 
 function checkDuoCoherence(primary: SpecialtyId[], goal: GoalId): boolean {
   const coherentDuos: Partial<Record<GoalId, Array<[SpecialtyId, SpecialtyId]>>> = {
-    sciences: [['maths','physique-chimie'],['maths','nsi'],['maths','svt'],['physique-chimie','nsi'],['maths','si']],
-    health: [['physique-chimie','svt'],['maths','svt'],['maths','physique-chimie']],
+    sciences: [['maths','nsi'],['maths','pc']], // Maths+NSI → MP2i, MPSI | Maths+Physique → MPSI, PCSI, PTSI
+    health: [['pc','svt'],['maths','svt'],['maths','pc']],
     humanities: [['ses','hggsp'],['ses','nsi'],['hggsp','nsi'],['hggsp','hlp'],['ses','hlp']],
     letters: [['hlp','hggsp'],['hlp','ses']],
     arts: [['cav','nsi'],['cav','hlp'],['cav','hggsp']],
@@ -209,9 +238,9 @@ function checkDuoCoherence(primary: SpecialtyId[], goal: GoalId): boolean {
 }
 
 const LABELS: Record<SpecialtyId, string> = {
-  maths: 'Mathématiques', nsi: 'NSI', 'physique-chimie': 'Physique-Chimie',
+  maths: 'Mathématiques', nsi: 'NSI', 'pc': 'Physique-Chimie',
   svt: 'SVT', ses: 'SES', hggsp: 'HGGSP', hlp: 'HLP',
-  cav: 'Cinéma-Audiovisuel', si: "Sciences de l'Ingénieur", eps: 'EPS',
+  cav: 'Cinéma-Audiovisuel', si: "Sciences de l'Ingénieur", llce: 'LLCE',
 };
 function labelOf(id: SpecialtyId): string { return LABELS[id] ?? id; }
 

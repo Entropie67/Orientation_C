@@ -1,6 +1,6 @@
 export type SpecialtyId =
-  | 'maths' | 'nsi' | 'physique-chimie' | 'svt'
-  | 'ses' | 'hggsp' | 'hlp' | 'cav' | 'si' | 'eps';
+  | 'maths' | 'nsi' | 'pc' | 'svt'
+  | 'ses' | 'hggsp' | 'hlp' | 'cav' | 'si' | 'llce';
 
 export interface Specialty {
   id: SpecialtyId;
@@ -10,6 +10,7 @@ export interface Specialty {
   tags: string[];
   color: string;
   icon: string;
+  note?: string;
 }
 
 export const SPECIALTIES: Specialty[] = [
@@ -19,7 +20,7 @@ export const SPECIALTIES: Specialty[] = [
   { id: 'nsi', label: 'Numérique et Sciences Informatiques', shortLabel: 'NSI',
     description: 'Algorithmique, programmation, architecture des systèmes',
     tags: ['Numérique', 'Transversal', 'Innovation'], color: 'violet', icon: '⟨⟩' },
-  { id: 'physique-chimie', label: 'Physique-Chimie', shortLabel: 'Physique-Chimie',
+  { id: 'pc', label: 'Physique-Chimie', shortLabel: 'Physique-Chimie',
     description: 'Mécanique, thermodynamique, chimie organique',
     tags: ['Sciences', 'Ingénierie', 'Médecine'], color: 'cyan', icon: '⚗' },
   { id: 'svt', label: 'Sciences de la Vie et de la Terre', shortLabel: 'SVT',
@@ -39,7 +40,12 @@ export const SPECIALTIES: Specialty[] = [
     tags: ['Arts', 'Cinéma', 'Création'], color: 'pink', icon: '🎬' },
   { id: 'si', label: "Sciences de l'Ingénieur", shortLabel: 'SI',
     description: 'Conception, mécanique, systèmes pluritechniques',
-    tags: ['Ingénierie', 'Technique', 'Conception'], color: 'slate', icon: '⚙' },
+    tags: ['Ingénierie', 'Technique', 'Conception'], color: 'slate', icon: '⚙',
+    note: 'Spécialité en voie de disparition au niveau national, spécifique à une orientation vers PTSI' },
+  { id: 'llce', label: 'LLCE', shortLabel: 'LLCE',
+    description: 'Langues, littératures et cultures étrangères',
+    tags: ['Langues', 'International', 'Culture'], color: 'rose', icon: '🌐',
+    note: "Pas toujours disponible dans les établissements pour cause d'effectifs." },
 ];
 
 export const getSpecialty = (id: SpecialtyId): Specialty | undefined =>

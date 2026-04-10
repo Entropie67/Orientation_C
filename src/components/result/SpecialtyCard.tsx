@@ -42,6 +42,9 @@ export function SpecialtyCard({ id, rank }: { id: SpecialtyId; rank?: number }) 
           <div className="flex flex-wrap gap-1.5 mt-2">
             {tags.map((tag) => <Badge key={tag} variant={colorMap[color] ?? 'blue'}>{tag}</Badge>)}
           </div>
+          {specialty.note && (
+            <p className="text-xs text-amber-600 mt-2 italic">{specialty.note}</p>
+          )}
         </div>
       </div>
     </div>

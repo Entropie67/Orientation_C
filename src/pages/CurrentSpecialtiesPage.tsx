@@ -45,6 +45,7 @@ export function CurrentSpecialtiesPage({ onSubmit, onBack, totalSteps }: {
                 <div className="flex-1 min-w-0">
                   <p className={`font-semibold text-sm ${isSelected ? 'text-blue-800' : 'text-slate-800'}`}>{spec.label}</p>
                   <p className="text-xs text-slate-500 mt-0.5">{spec.description}</p>
+                  {spec.note && <p className="text-xs text-amber-600 mt-0.5 italic">{spec.note}</p>}
                 </div>
                 {isSelected && (
                   <div className="w-5 h-5 rounded-full bg-blue-600 flex items-center justify-center shrink-0">
